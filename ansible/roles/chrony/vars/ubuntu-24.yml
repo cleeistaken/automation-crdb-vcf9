@@ -1,0 +1,9 @@
+# Chrony installation task
+chrony_installation_task: ansible_task_install_chrony_ubuntu.yml
+
+# Chrony service
+chrony_service: chronyd
+
+# Chrony Configuration file and template
+chrony_conf_file: /etc/chrony.conf
+chrony_conf_template: chrony.conf.ubuntu-24.j2

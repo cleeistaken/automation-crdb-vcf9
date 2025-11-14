@@ -1,0 +1,73 @@
+- name: Wait for systems to boot up and cloud-init to complete
+  hosts: all
+  gather_facts: no
+  any_errors_fatal: true
+  tasks:
+    - name: Wait up to 300 seconds
+      wait_for_connection:
+        delay: 3
+        sleep: 5
+        timeout: 300
+
+    - name: Gather all facts of cloud init
+      cloud_init_data_facts:
+      register: result
+
+    - name: Wait for cloud init to finish
+      cloud_init_data_facts:
+        filter: status
+      register: res
+      until: "res.cloud_init_data_facts.status.v1.stage is defined and not res.cloud_init_data_facts.status.v1.stage"
+      retries: 50
+      delay: 5
+
+- name: Install CockroachDB
+  hosts: crdb
+  gather_facts: false
+  any_errors_fatal: true
+  become: true
+
+  vars:
+    # Default is true
+    #install_chrony: true
+
+    # Default is true
+    #install_vmnotification: true
+
+  pre_tasks:
+    - name: Gather distribution facts
+      ansible.builtin.setup:
+        filter:
+          - 'ansible_distribution'
+          - 'ansible_distribution_version'
+          - 'ansible_distribution_major_version'
+
+    - name: Print ansible facts
+      ansible.builtin.debug:
+        var: ansible_facts
+        verbosity: 1
+
+    - name: Fail on unexpected distributions
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == 'Ubuntu'
+          - ansible_distribution_major_version == '24'
+        fail_msg: "Unexpected distribution: {{ ansible_distribution }}"
+        success_msg: "Supported distribution and version."
+
+    - name: Set OS variables
+      ansible.builtin.include_vars: "{{ item }}"
+      with_first_found:
+        - "{{ ansible_distribution | lower }}-{{ ansible_distribution_version | lower }}.yml"
+        - "{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version | lower }}.yml"
+        - "{{ ansible_distribution | lower }}.yml"
+
+  tasks:
+    - name: Install Chrony using PTP device
+      ansible.builtin.include_role:
+        name: chrony
+
+    - name: Install vMotion Notification for CockroachDB
+      ansible.builtin.include_role:
+        name: vmnotification
+

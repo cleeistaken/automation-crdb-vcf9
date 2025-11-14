@@ -1,0 +1,15 @@
+# vMotion Notification installation task
+vmnotification_installation_task: ansible_task_install_vmnotification_ubuntu.yml
+
+# Installation package
+vmnotification_package: https://github.com/vmware-workloads/vmotion-application-notification/releases/download/v2.0/vmnotification.tar.gz
+
+# Repo and versions
+vmnotification_version: "v2.0"  # Can be overridden with -e vmnotification_version=vX.X
+vmnotification_repo: "vmware-workloads/vmotion-application-notification"
+
+# Folders
+vmnotification_install_dir: "/opt/vmnotification"
+vmnotification_config_dir: "/etc/vmnotification"
+vmnotification_log_dir: "/var/log/vmnotification"
+vmnotification_run_dir: "/var/run/vmotion_notifier"

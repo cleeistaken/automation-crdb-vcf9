@@ -1,0 +1,6 @@
+### Ansible ###
+*.retry
+
+### Generated Files ###
+inventory.yml
+results/*

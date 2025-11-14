@@ -1,0 +1,93 @@
+- name: Ensure required packages are installed
+  ansible.builtin.apt:
+    name:
+      - python3
+      - python3-pip
+      - curl
+      - unzip
+    state: present
+    update_cache: yes
+
+- name: Create installation directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ vmnotification_install_dir }}"
+    - "{{ vmnotification_config_dir }}"
+    - "{{ vmnotification_log_dir }}"
+    - "{{ vmnotification_run_dir }}"
+
+- name: Download vmotion-application-notification release
+  ansible.builtin.get_url:
+    url: "https://github.com/{{ vmnotification_repo }}/archive/refs/tags/{{ vmnotification_version }}.tar.gz"
+    dest: "/tmp/vmnotification-{{ vmnotification_version }}.tar.gz"
+    mode: '0644'
+  retries: 10
+  delay: 6
+
+- name: Extract release archive
+  ansible.builtin.unarchive:
+    src: "/tmp/vmnotification-{{ vmnotification_version }}.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
+    creates: "/tmp/vmotion-application-notification-{{ vmnotification_version | regex_replace('^v', '') }}"
+
+- name: Set extracted directory name
+  ansible.builtin.set_fact:
+    extracted_dir: "/tmp/vmotion-application-notification-{{ vmnotification_version | regex_replace('^v', '') }}"
+
+- name: Copy Python scripts to installation directory
+  ansible.builtin.copy:
+    src: "{{ extracted_dir }}/{{ item }}"
+    dest: "{{ vmnotification_install_dir }}/{{ item }}"
+    mode: '0755'
+    remote_src: yes
+  loop:
+    - vmnotification.py
+    - vmnotification_service.py
+    - vmnotification_config.py
+    - vmnotification_exception.py
+    - utils.py
+
+- name: Copy configuration file
+  ansible.builtin.copy:
+    src: "{{ extracted_dir }}/vmnotification.conf"
+    dest: "{{ vmnotification_config_dir }}/vmnotification.conf"
+    mode: '0644'
+    remote_src: yes
+    force: no  # Don't overwrite existing config
+
+- name: Copy systemd service file
+  ansible.builtin.copy:
+    src: "{{ extracted_dir }}/vmnotification.service"
+    dest: "/etc/systemd/system/vmnotification.service"
+    mode: '0644'
+    remote_src: yes
+
+- name: Copy systemd service options file
+  ansible.builtin.copy:
+    src: "{{ extracted_dir }}/vmnotification"
+    dest: "/etc/default/vmnotification"
+    mode: '0644'
+    remote_src: yes
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
+- name: Enable vmnotification service
+  ansible.builtin.systemd:
+    name: vmnotification
+    enabled: yes
+    state: stopped  # Don't start until configured
+
+- name: Clean up temporary files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "/tmp/vmnotification-{{ vmnotification_version }}.tar.gz"
+    - "{{ extracted_dir }}"
+

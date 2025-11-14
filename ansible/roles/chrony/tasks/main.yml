@@ -1,0 +1,9 @@
+- name: Set chrony role OS variables
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution | lower }}-{{ ansible_distribution_version | lower }}.yml"
+    - "{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version | lower }}.yml"
+    - "{{ ansible_distribution | lower }}.yml"
+
+- name: Install and configure chrony
+  ansible.builtin.include_tasks: "{{ chrony_installation_task }}"

@@ -1,0 +1,100 @@
+#
+# vCenter Server Configuration
+#
+vcenter_server                      = "vc.lab.local"
+vcenter_user                        = "administrator@vsphere.local"
+vcenter_password                    = "password123!"
+vcenter_insecure_ssl                = true
+
+#
+# vSphere Configuration
+#
+vsphere_clusters = [
+  {
+    # See variables.tf for the description of the variable
+    vs_dc                           = "datacenter"
+    vs_cls                          = "cluster01"
+    vs_rp                           = "cockroach"
+    vs_dvs                          = "vds"
+    vs_dvs_pg_1                     = "pg01"
+    vs_dvs_pg_1_ipv4_subnet         = "10.0.0.0/24"
+    vs_dvs_pg_1_ipv4_ips            = ["10.0.0.100",
+                                       "10.0.0.101",
+                                       "10.0.0.102",
+                                       "10.0.0.103",
+                                       "10.0.0.104",
+                                       "10.0.0.105",
+                                       "10.0.0.106",
+                                       "10.0.0.107",
+                                       "10.0.0.108",
+                                       "10.0.0.109",
+                                       "10.0.0.110",
+                                       "10.0.0.111",
+                                       "10.0.0.112",
+                                       "10.0.0.113",
+                                       "10.0.0.114",
+                                       "10.0.0.115",
+                                       "10.0.0.116",
+                                       "10.0.0.117",
+                                       "10.0.0.118",
+                                       "10.0.0.119",
+                                       "10.0.0.120"]
+    vs_dvs_pg_1_ipv4_gw             = "10.0.0.1"
+    vs_ds                           = "vsan01"
+    vs_ds_sp                        = "vSAN Default Storage Policy"
+    vs_vm_template                  = "centos8.2_x64"
+    vs_vm_template_boot             = "efi"
+    vs_vm_domain                    = "wld01.lab.local"
+    vs_vm_dns                       = ["10.0.0.10", "10.0.0.11"]
+    vs_vm_dns_suffix                = ["wld01.lab.local", "lab.local"]
+  }
+]
+
+#
+# CRDB Client VM Configuration
+#
+
+# Uncomment to specify a non-default value
+# crdb_client_vm_per_cluster = 1
+# crdb_client_name_prefix = "crdb-client"
+# crdb_client_vm_anti_affinity = true
+
+crdb_client = {
+    cpu_count                       = 8
+    memory_gb                       = 16
+    hw_version                      = 17
+    os_disk_gb                      = 100
+}
+
+#
+# HA Proxy VM Configuration
+#
+# Uncomment to specify a non-default value
+# crdb_haproxy_vm_per_cluster = 1
+# crdb_haproxy_name_prexix = "crdb-haproxy"
+# crdb_haproxy_vm_anti_affinity = true
+
+crdb_haproxy = {
+    cpu_count                       = 4
+    memory_gb                       = 8
+    hw_version                      = 17
+    os_disk_gb                      = 80
+}
+
+#
+# CRDB VM Configuration
+#
+# Uncomment to specify a non-default value
+# crdb_vm_per_cluster = 4
+# crdb_name_prefix = "crdb"
+# crdb_vm_anti_affinity = true
+
+crdb = {
+    cpu_count                       = 16
+    memory_gb                       = 64
+    hw_version                      = 17
+    os_disk_gb                      = 100
+    data_disk_count                 = 2
+    data_disk_gb                    = 100
+}
+

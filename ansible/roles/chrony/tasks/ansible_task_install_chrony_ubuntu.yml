@@ -1,0 +1,68 @@
+- name: Gather facts
+  ansible.builtin.setup:
+    filter:
+      - 'ansible_kernel'
+
+- name: Install linux extra modules to add PTP driver
+  package:
+    name:
+      - "linux-modules-extra-{{ ansible_kernel }}"
+    lock_timeout: 120
+    update_cache: true
+  until: kernel_modules_st is success
+  retries: 30
+  delay: 10
+  register: kernel_modules_st
+
+- name: rebooting machine
+  ansible.builtin.reboot:
+    reboot_timeout: 300
+    test_command: dpkg --verify
+    pre_reboot_delay: 5
+    post_reboot_delay: 5
+  when: kernel_modules_st.changed
+
+- name: validate ptp0 exist
+  ansible.builtin.stat:
+    path: "{{ ptp_device }}"
+  register: stat_st
+
+- name: Fail if the ptp device does not exist
+  ansible.builtin.fail:
+    msg: "PTP device does not exist: {{ ptp_device }}"
+  when: not stat_st.stat.exists
+
+- name: Apt install chrony
+  ansible.builtin.apt:
+    name:
+      - chrony
+    lock_timeout: 120
+  until: chrony_st is success
+  retries: 30
+  delay: 10
+  register: chrony_st
+
+- name: create chrony configuration
+  ansible.builtin.template:
+    src: "{{ chrony_conf_template }}"
+    dest: "{{ chrony_conf_file }}"
+    owner: root
+    group: root
+    mode: 0644
+  register: chrony_st
+
+- name: restart chrony
+  ansible.builtin.systemd:
+    name: "{{ chrony_service }}"
+    enabled: yes
+    state: restarted
+    masked: no
+  when: chrony_st.changed
+
+- name: start and enable the chrony service
+  ansible.builtin.systemd:
+    name: "{{ chrony_service }}"
+    enabled: yes
+    state: started
+    masked: no
+    daemon_reload: yes
