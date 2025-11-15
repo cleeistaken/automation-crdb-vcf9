@@ -27,13 +27,6 @@
   any_errors_fatal: true
   become: true
 
-  vars:
-    # Default is true
-    #install_chrony: true
-
-    # Default is true
-    #install_vmnotification: true
-
   pre_tasks:
     - name: Gather distribution facts
       ansible.builtin.setup:
@@ -66,8 +59,14 @@
     - name: Install Chrony using PTP device
       ansible.builtin.include_role:
         name: chrony
+      when:
+        - install_chrony
+        - ptp_enabled | default(default_ptp_enabled)
 
     - name: Install vMotion Notification for CockroachDB
       ansible.builtin.include_role:
         name: vmnotification
+      when:
+        - install_vmnotification
+        - vmotion_notifications_enabled | default(vmotion_notifications_enabled)
 
