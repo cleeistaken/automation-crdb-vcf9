@@ -162,6 +162,11 @@ resource "vsphere_virtual_machine" "crdb_vm" {
   extra_config = {
     "guestinfo.userdata" = data.template_cloudinit_config.userdata.rendered
     "guestinfo.userdata.encoding" = "gzip+base64"
+
+    # Cannot add options that start with 'vmx'
+    # Ref. https://github.com/vmware/terraform-provider-vsphere/issues/2626
+    #"vmx.vmOpNotificationToApp.enabled" = "TRUE"
+    #"vmx.vmOpNotificationToApp.timeout" = "600"
   }
 
   lifecycle {
@@ -179,7 +184,7 @@ resource "time_sleep" "wait_30_seconds" {
 
 resource "null_resource" "ptp_device" {
   depends_on = [ time_sleep.wait_30_seconds ]
-  count = var.crdb_vm_ptp_device ? 1 : 0
+ count = var.crdb_vm_ptp_device ? 1 : 0
 
   provisioner "local-exec" {
     when = create
